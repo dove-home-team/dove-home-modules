@@ -15,3 +15,8 @@ password = ""
 id = "baka4n"
 name = "baka4n"
 url = "https://github.com/baka4n"
+
+[[authors]]
+id = "dove-home-team"
+name = "Dove Home Team"
+url = "https://github.com/dove-home-team"
