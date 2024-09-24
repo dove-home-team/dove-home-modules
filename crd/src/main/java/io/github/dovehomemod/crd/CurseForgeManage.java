@@ -16,16 +16,21 @@ public class CurseForgeManage {
         try(BufferedReader utf8Reader = ResourceUtil.getUtf8Reader("curse-key.json")) {
             curseApiKey = JSONUtil.parseObj(utf8Reader).getStr("apiKey");
         }
+        getGameModInfo("minecraft", "819845");
+    }
 
-
+    public JSONObject getGameModInfo(String game, String modid) {// 默认检索mc的
+        int gameId = getGameInfo(game).getInt("id", 423);
+        try (HttpResponse execute = getCurseforgeInfo("mods/" + modid, 1)) {
+            return JSONUtil.parseObj(execute.body()).getJSONObject("data");
+        }
     }
 
     public JSONObject getGameInfo(String game) {
         AtomicReference<JSONObject> obj = new AtomicReference<>();
-        try (HttpResponse execute = HttpRequest.get("https://api.curseforge.com/v1/games")
-                .header("x-api-key", curseApiKey).timeout(20000).execute()) {
-            var body = execute.body();
-            JSONUtil.parseObj(body).getJSONArray("data").stream().filter(info -> {
+        try (HttpResponse execute = getCurseforgeInfo("games", 1)) {
+
+            JSONUtil.parseObj(execute.body()).getJSONArray("data").stream().filter(info -> {
                 if (info instanceof JSONObject jif) {
                     return jif.getStr("slug").equals(game);
                 }
@@ -36,6 +41,11 @@ public class CurseForgeManage {
             obj.set(JSONUtil.createObj());
         }
         return obj.get();
+    }
+
+    public HttpResponse getCurseforgeInfo(String appendUrl, int apiVersion) {
+        return HttpRequest.get("https://api.curseforge.com/v" + apiVersion + "/" + appendUrl)
+                .header("x-api-key", curseApiKey).timeout(20000).execute();
     }
 
     public String getCurseApiKey() {
