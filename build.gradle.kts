@@ -6,6 +6,7 @@ import cn.hutool.json.JSONUtil
 import cn.hutool.setting.Setting
 import com.fasterxml.jackson.dataformat.toml.TomlMapper
 import com.vanniktech.maven.publish.SonatypeHost
+import java.util.Properties
 
 
 plugins {
@@ -16,13 +17,14 @@ plugins {
     signing
 }
 
-val mavenGroup: String by rootProject
-val projectVersion: String by rootProject
-val projName: String by rootProject
-val projDescription: String by rootProject
-group = mavenGroup
-version = projectVersion
-description = projDescription
+var buildProperties = Properties()
+rootProject.file("ext/build.ext.properties").bufferedReader().use {
+    buildProperties.load(it)
+}
+
+group = buildProperties.getProperty("mavenGroup")
+version = buildProperties.getProperty("projectVersion")
+description = buildProperties.getProperty("projDescription")
 
 base {
     archivesName = name
@@ -67,11 +69,9 @@ file.bufferedReader(Charsets.UTF_8).use {
 
 var center = mavenToml.getJSONObject("center")
 var signToml = mavenToml.getJSONObject("center")
-setProperty("mavenCentralUsername", center.getStr("username"))
-setProperty("mavenCentralPassword", center.getStr("password"))
-setProperty("signing.keyId", signToml.getStr("keyId"))
-setProperty("signing.password", signToml.getStr("password"))
-setProperty("signing.secretKeyRingFile", signToml.getStr("secretKeyRingFile"))
+
+
+
 
 subprojects {
     apply(plugin = "maven-publish")
@@ -82,9 +82,8 @@ subprojects {
     base {
         archivesName = "${rootProject.base.archivesName.get()}-$name"
     }
+
 }
-
-
 
 allprojects {
     repositories {
@@ -97,6 +96,7 @@ allprojects {
     }
 
     mavenPublishing {
+
         publishToMavenCentral(SonatypeHost.DEFAULT, automaticRelease = true)
         coordinates(project.group.toString(), base.archivesName.get(), project.version.toString())
         pom {
@@ -127,6 +127,8 @@ allprojects {
             }
         }
     }
+
+
 }
 
 

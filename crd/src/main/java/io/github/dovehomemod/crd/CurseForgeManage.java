@@ -15,6 +15,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class CurseForgeManage implements Minecraft {
     private String curseApiKey;
 
+    /**
+     * curse maven instance
+     */
     CurseForgeManage() {
         try(BufferedReader utf8Reader = ResourceUtil.getUtf8Reader("curse-key.json")) {
             curseApiKey = JSONUtil.parseObj(utf8Reader).getStr("apiKey");
@@ -23,14 +26,14 @@ public class CurseForgeManage implements Minecraft {
         }
     }
 
-    public JSONObject getGameModInfo(String game, String modid, String version) {// 判断这个模组是不是这个游戏德否则返回一个空包
+    public JSONObject getGameModInfo(String game, String modid, String version) {
         try (HttpResponse execute = getCurseforgeInfo("mods/" + modid, 1)) {
             JSONObject data = JSONUtil.parseObj(execute.body()).getJSONObject("data");
             return Objects.equals(data.getInt("gameId"), getGameInfo(game).getInt("id")) ? data : JSONUtil.createObj();
         }
     }
 
-    public JSONObject getGameModInfo(String game, String modid) {// 判断这个模组是不是这个游戏德否则返回一个空包
+    public JSONObject getGameModInfo(String game, String modid) {
         try (HttpResponse execute = getCurseforgeInfo("mods/" + modid, 1)) {
             JSONObject data = JSONUtil.parseObj(execute.body()).getJSONObject("data");
             return Objects.equals(data.getInt("gameId"), getGameInfo(game).getInt("id")) ? data : JSONUtil.createObj();
