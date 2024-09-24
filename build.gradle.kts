@@ -89,7 +89,7 @@ allprojects {
     }
 
     mavenPublishing {
-        publishToMavenCentral(SonatypeHost.DEFAULT, automaticRelease = true)
+        publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
         coordinates(project.group.toString(), base.archivesName.get(), project.version.toString())
         pom {
             name = base.archivesName.get()
