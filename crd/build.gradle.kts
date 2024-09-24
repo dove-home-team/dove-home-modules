@@ -17,7 +17,7 @@ if (!curseApiKeyFile.exists()) {
 }
 
 dependencies {
-    implementation("cn.hutool:hutool-all:5.+")
+    implementation("cn.hutool:hutool-all:5.8.31")
 }
 
 

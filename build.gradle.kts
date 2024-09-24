@@ -12,6 +12,7 @@ plugins {
     `java-library`
     id("com.github.hierynomus.license") version "0.15.0"
     id("com.vanniktech.maven.publish") version "0.29.0"
+    `maven-publish`
     base
     signing
 }
@@ -36,15 +37,7 @@ if (buildPropertiesPath.exists().not()) {
         buildProperties.load(it)
     }
 }
-allprojects {
-    project.group = buildProperties.getProperty("mavenGroup")
-    project.version =buildProperties
-        .nullPut(buildProperties
-            .getVersionKey(rootProject, project), buildPropertiesPath, "1.0.0.0", "gradle.properties manager")
-    project.description =buildProperties
-        .nullPut(buildProperties
-            .getDescriptionKey(rootProject, project), buildPropertiesPath, project.name, "gradle.properties manager")
-}
+
 
 
 
@@ -69,6 +62,7 @@ var mavenToml: JSONObject = read(file("maven.toml").copy(file(("gradle/template.
 subprojects {
     apply(plugin = "maven-publish")
     apply(plugin = "base")
+    apply(plugin = "signing")
     apply(plugin = "com.vanniktech.maven.publish")
     apply(plugin = "java-library")
 
@@ -77,6 +71,10 @@ subprojects {
     }
 }
 
+
+allprojects {
+
+}
 
 allprojects {
     repositories {
@@ -88,13 +86,28 @@ allprojects {
         }
     }
 
+    project.group = buildProperties.getProperty("mavenGroup")
+    project.version =buildProperties
+        .nullPut(buildProperties
+            .getVersionKey(rootProject, project), buildPropertiesPath, "1.0.0.0", "gradle.properties manager")
+    project.description =buildProperties
+        .nullPut(buildProperties
+            .getDescriptionKey(rootProject, project), buildPropertiesPath, project.name, "gradle.properties manager")
+
+    signing {
+        useGpgCmd()
+        sign(publishing.publications)
+    }
+
     mavenPublishing {
         publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
         coordinates(project.group.toString(), base.archivesName.get(), project.version.toString())
+        this.signAllPublications()
         pom {
             name = base.archivesName.get()
             description = project.description
             inceptionYear = parse.year.toString()
+            url = repos.getStr("html_url")
             licenses {
                 license {
                     name = mavenToml.getStr("license")
