@@ -3,26 +3,37 @@ package io.github.dovehomemod.crd;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
+import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class CurseForgeManage {
-    private final String curseApiKey;
-    public CurseForgeManage() throws IOException {
+public class CurseForgeManage implements Minecraft {
+    private String curseApiKey;
+
+    CurseForgeManage() {
         try(BufferedReader utf8Reader = ResourceUtil.getUtf8Reader("curse-key.json")) {
             curseApiKey = JSONUtil.parseObj(utf8Reader).getStr("apiKey");
+        } catch (IOException e) {
+            curseApiKey = "";
         }
-        getGameModInfo("minecraft", "819845");
     }
 
-    public JSONObject getGameModInfo(String game, String modid) {// 默认检索mc的
-        int gameId = getGameInfo(game).getInt("id", 423);
+    public JSONObject getGameModInfo(String game, String modid, String version) {// 判断这个模组是不是这个游戏德否则返回一个空包
         try (HttpResponse execute = getCurseforgeInfo("mods/" + modid, 1)) {
-            return JSONUtil.parseObj(execute.body()).getJSONObject("data");
+            JSONObject data = JSONUtil.parseObj(execute.body()).getJSONObject("data");
+            return Objects.equals(data.getInt("gameId"), getGameInfo(game).getInt("id")) ? data : JSONUtil.createObj();
+        }
+    }
+
+    public JSONObject getGameModInfo(String game, String modid) {// 判断这个模组是不是这个游戏德否则返回一个空包
+        try (HttpResponse execute = getCurseforgeInfo("mods/" + modid, 1)) {
+            JSONObject data = JSONUtil.parseObj(execute.body()).getJSONObject("data");
+            return Objects.equals(data.getInt("gameId"), getGameInfo(game).getInt("id")) ? data : JSONUtil.createObj();
         }
     }
 
@@ -43,11 +54,7 @@ public class CurseForgeManage {
         return obj.get();
     }
 
-    public HttpResponse getCurseforgeInfo(String appendUrl, int apiVersion) {
-        return HttpRequest.get("https://api.curseforge.com/v" + apiVersion + "/" + appendUrl)
-                .header("x-api-key", curseApiKey).timeout(20000).execute();
-    }
-
+    @Override
     public String getCurseApiKey() {
         return curseApiKey;
     }

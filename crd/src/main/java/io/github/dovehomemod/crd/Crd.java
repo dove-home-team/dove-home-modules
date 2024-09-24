@@ -7,6 +7,6 @@ import java.io.IOException;
  */
 public class Crd {
     public static void main(String[] args) throws IOException {
-        CurseForgeManage curseForgeManage = new CurseForgeManage();
+        CurseForgeManage curse = Manages.curse;
     }
 }
