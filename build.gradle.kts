@@ -4,7 +4,6 @@ import cn.hutool.http.HttpUtil
 import cn.hutool.json.JSONObject
 import cn.hutool.json.JSONUtil
 import cn.hutool.setting.Setting
-import com.fasterxml.jackson.dataformat.toml.TomlMapper
 import com.vanniktech.maven.publish.SonatypeHost
 import java.util.Properties
 
