@@ -1,15 +1,25 @@
 import java.util.Properties
 
+var settingsPropertiesPath = file("gradle/ext/settings.properties")
+
 var settingsProperties = Properties()
-file("ext/settings.ext.properties").bufferedReader(Charsets.UTF_8).use {
-    settingsProperties.load(it)
+if (settingsPropertiesPath.exists().not()) {
+    settingsProperties.put("projName", "maven-publish-template")
+    settingsPropertiesPath.bufferedWriter(Charsets.UTF_8).use {
+        settingsProperties.store(it, "gradle.properties manager")
+    }
+} else {
+    settingsPropertiesPath.bufferedReader(Charsets.UTF_8).use {
+        settingsProperties.load(it)
+    }
 }
+
 
 rootProject.name = settingsProperties.getProperty("projName")
 
-include("curse-rinth-download")//批量下载curseforge modrinth模组
+include("curse-rinth-download")
 
 project(":curse-rinth-download").run {
-    this.projectDir = file("crd")
-    this.name = "crd"
+    name = "crd"
+    projectDir = file("crd")
 }

@@ -8,7 +8,6 @@ import com.fasterxml.jackson.dataformat.toml.TomlMapper
 import com.vanniktech.maven.publish.SonatypeHost
 import java.util.Properties
 
-
 plugins {
     `java-library`
     id("com.github.hierynomus.license") version "0.15.0"
@@ -17,34 +16,40 @@ plugins {
     signing
 }
 
-var buildProperties = Properties()
-rootProject.file("ext/build.ext.properties").bufferedReader().use {
-    buildProperties.load(it)
-}
+initGradleProperties()
 
-group = buildProperties.getProperty("mavenGroup")
-version = buildProperties.getProperty("projectVersion")
-description = buildProperties.getProperty("projDescription")
-
-base {
-    archivesName = name
-}
-
-buildscript {
-    repositories {
-        mavenCentral()
-        mavenLocal()
+var buildPropertiesPath = project.rootProject.file("gradle/ext/build.properties")
+val buildProperties = Properties()
+    .nullToCreate(buildPropertiesPath) {
+        put("mavenGroup", "io.github.baka4n")
     }
-    dependencies {
-        classpath("cn.hutool:hutool-json:5.8.31")
-        classpath("com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.17.2")
-        classpath("cn.hutool:hutool-setting:5.8.31")
-        classpath("cn.hutool:hutool-http:5.8.31")
+val gitConfig = Setting(project.rootProject.file(".git/config").absolutePath)
+val gitBranch = FileUtil.readUtf8String(project.rootProject.file(".git/HEAD")).replace("ref: refs/heads/", "").trim()
+
+if (buildPropertiesPath.exists().not()) {
+    buildProperties.put("mavenGroup", "io.github.baka4n")
+    buildPropertiesPath.bufferedWriter(Charsets.UTF_8).use {
+        buildProperties.store(it, "gradle.properties manager")
+    }
+} else {
+    buildPropertiesPath.bufferedReader(Charsets.UTF_8).use {
+        buildProperties.load(it)
     }
 }
+allprojects {
+    project.group = buildProperties.getProperty("mavenGroup")
+    project.version =buildProperties
+        .nullPut(buildProperties
+            .getVersionKey(rootProject, project), buildPropertiesPath, "1.0.0.0", "gradle.properties manager")
+    project.description =buildProperties
+        .nullPut(buildProperties
+            .getDescriptionKey(rootProject, project), buildPropertiesPath, project.name, "gradle.properties manager")
+}
 
-var s = Setting(file(".git/config").absolutePath)
-var branch = FileUtil.readUtf8String(file(".git/HEAD")).replace("ref: refs/heads/", "").trim()
+
+
+var s = gitConfig
+var branch = gitBranch
 
 val repos =
     JSONUtil.parseObj(HttpUtil.get(s.get("remote \"origin\"", "url")
@@ -54,23 +59,11 @@ var parse =
     LocalDateTimeUtil.parse(repos.getStr("created_at").replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ssZ")
 
 
-
-var file = file("maven.toml").apply {
-    if (!exists()) {
-        FileUtil.copyFile(file("gradle/template.toml"), this)
-    }
+base {
+    archivesName = getSubProjectName(rootProject)
 }
 
-var mavenToml: JSONObject = JSONUtil.createObj()
-file.bufferedReader(Charsets.UTF_8).use {
-    val readTree = TomlMapper().readTree(it)
-    mavenToml = JSONUtil.parseObj(readTree.toPrettyString())
-}
-
-var center = mavenToml.getJSONObject("center")
-var signToml = mavenToml.getJSONObject("center")
-
-
+var mavenToml: JSONObject = read(file("maven.toml").copy(file(("gradle/template.toml"))))
 
 
 subprojects {
@@ -80,10 +73,10 @@ subprojects {
     apply(plugin = "java-library")
 
     base {
-        archivesName = "${rootProject.base.archivesName.get()}-$name"
+        archivesName = getSubProjectName(rootProject)
     }
-
 }
+
 
 allprojects {
     repositories {
@@ -96,7 +89,6 @@ allprojects {
     }
 
     mavenPublishing {
-
         publishToMavenCentral(SonatypeHost.DEFAULT, automaticRelease = true)
         coordinates(project.group.toString(), base.archivesName.get(), project.version.toString())
         pom {
@@ -127,11 +119,4 @@ allprojects {
             }
         }
     }
-
-
 }
-
-
-
-
-
